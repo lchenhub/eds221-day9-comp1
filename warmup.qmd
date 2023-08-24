@@ -1,0 +1,136 @@
+---
+title: "Untitled"
+format: html
+editor: visual
+---
+
+```{r}
+library(tidyverse)
+library(palmerpenguins)
+library(kableExtra)
+library(patchwork)
+library(reprex)
+```
+
+## Warm Up
+
+Starting from penguins, create a new subset in which you:
+
+1.  Only keep columns species, island, sex, body_mass_g, and flipper_length_mm
+
+2.  Filter to only include Chinstrap and Gentoos
+
+3.  Rename the species column to penguin_species
+
+4.  Create a summary table that contains the mean of body mass, the mean of flipper length, and the total count of observations each by species and sex
+
+```{r}
+warm_penguins <- penguins %>% 
+  select(species, island, sex, body_mass_g, flipper_length_mm) %>% #use select instead of filter for limiting to a few columns
+  filter(species %in% c("Chinstrap", "Gentoos")) %>% 
+  mutate(penguin_species = species) %>% #you can also redefine this above under select as select(penguin_species = species, island) but be careful w calling "species" later on 
+   group_by(penguin_species, sex) %>% #this organizes it more neatly, doesnt change info
+  summarise(mean_mass = mean(body_mass_g, na.rm = TRUE),
+            mean_flipper = mean(flipper_length_mm, na.rm = TRUE),
+            sample_size = n())
+```
+
+A few variations on dplyr::across()
+
+Create a summary table of mean values by species for all numeric variables in the penguins dataset
+
+```{r}
+penguins %>% 
+  group_by(species) %>% 
+  summarize(across(where(is.numeric), max, na.rm = TRUE))
+```
+
+Calculate the mean value of all columns that start with "bill"
+
+```{r}
+penguins %>% 
+  group_by(species, island) %>% 
+  summarise(across(starts_with("bill"), mean, na.rm = TRUE)) #this automates the summary process for any col that starts w "bill"
+```
+
+```{r}
+penguins %>% 
+  group_by(island, year) %>% 
+summarise(across(ends_with("mm"), mean, na.rm = TRUE)) #here, you use "ends_with" since "mm" is at the end of col
+```
+
+Find and return both the mean and standard deviation of all columns starting with "bill", group by penguin species, and return a new name that combines the original column with the function
+
+```{r}
+penguins %>% 
+  group_by(species) %>%
+  summarize(across(starts_with("bill"), list(mean = mean, sd = sd), na.rm = TRUE, .names = "{.col}hello{.fn}"))
+
+#this programattically updates the columns that start with "bill"
+#TIPS (from Casey) - he tends to write things clearly/long form first, and if it works, can go back to write it more efficiently later
+```
+
+```{r}
+penguins_table <-
+  penguins %>% 
+  group_by(species, sex) %>% 
+  summarize(mean_mass = mean(body_mass_g, na.rm = TRUE),
+            sd_mass = sd(body_mass_g, na.rm = TRUE)) %>% 
+  kable(col.names = c("Species", "Sex", "Mean body mass (g)", "SD body mass (g)")) %>% 
+  kable_styling(full_width = FALSE)
+
+#this entire chunk just stores the data in environment
+#kable lets you neatly rename the columns with formatting
+#kable_styling lets you play with the margins and how it prints
+```
+
+```{r}
+penguins_table #this actually shows the table
+```
+
+```{r}
+chart1 <- penguins %>% 
+  ggplot(aes(x = body_mass_g, 
+             y = flipper_length_mm)) +
+  geom_point()
+```
+
+```{r}
+chart2 <- penguins %>% 
+  ggplot(aes(x = bill_length_mm)) +
+  geom_histogram()
+```
+
+```{r}
+(chart1 + chart2 + chart1) / (chart2 + chart1)
+
+#this uses the patchwork library to stitch together compound figures programatically
+```
+
+## ALT TEXT!!!!!!!!!!!!!!!
+
+```{r}
+#| fig-cap: Penguin body mass observations by species
+#| fig-alt: jitterplot showing body mass measurements (y-axis, in grams) for three penguin species (Adelie, Chinstrap, and Gentoo) observed near Palmer Archilego, Anartica. Adeleie and Chinstraps have similar body mass distribution 
+
+# NOTE that the above uses hash pipe "#|", not just a hash like for notes
+#if you render, and right-click to inspect, then you will see the #alt text#
+
+ggplot(penguins, aes(x = species, y = body_mass_g)) +
+  geom_jitter(width = 0.2, alpha = 0.5, color = "navy")
+```
+
+```{r}
+library(tidyverse)
+
+ggplot(data = mtcars, aes(x = mpg, y = hp)) +
+  geom_point()
+
+#select the chunk you want to check fo reproducibility and run "reprex()" in the console
+#this will copy to clipboard, which you can then send to someone via repo in Github or slack or w/e
+#this is great if you need help with code, bc it actually copies in the original formatting
+```
+
+```{r}
+x = 5 + NA
+```
